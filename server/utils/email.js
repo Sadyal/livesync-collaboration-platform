@@ -1,7 +1,14 @@
 import transporter from "../config/nodemailer.js";
 
 /**
- * 🔒 Validate required fields
+ * 🔒 SIMPLE EMAIL VALIDATION
+ */
+const isValidEmail = (email) => {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+};
+
+/**
+ * 🔒 VALIDATE EMAIL PAYLOAD (fail fast)
  */
 const validateEmailPayload = ({ to, subject, html }) => {
   if (!to || !subject || !html) {
@@ -9,27 +16,41 @@ const validateEmailPayload = ({ to, subject, html }) => {
     err.status = 400;
     throw err;
   }
+
+  if (!isValidEmail(to)) {
+    const err = new Error("Invalid recipient email format");
+    err.status = 400;
+    throw err;
+  }
 };
 
 /**
- * 📧 Send Email (Generic Utility)
+ * 🧠 STRIP HTML → TEXT (fallback for deliverability)
+ */
+const stripHtml = (html) => {
+  return html.replace(/<[^>]*>/g, "");
+};
+
+/**
+ * 📧 SEND EMAIL (GENERIC UTILITY)
  */
 export const sendEmail = async ({ to, subject, html }) => {
   validateEmailPayload({ to, subject, html });
 
-  try {
-    const mailOptions = {
-      from: `"LiveSync Support" <${process.env.SMTP_USER}>`,
-      to,
-      subject,
-      html,
-    };
+  const mailOptions = {
+    from: `"LiveSync Support" <${process.env.SMTP_USER}>`,
+    to,
+    subject,
+    html,
+    text: stripHtml(html), // ✅ improves inbox delivery
+  };
 
+  try {
     const info = await transporter.sendMail(mailOptions);
 
-    // 🔍 Only log in development
+    // ✅ Safe logging (no sensitive data)
     if (process.env.NODE_ENV === "development") {
-      console.log("📤 Email sent:", {
+      console.log("📤 Email sent", {
         to,
         messageId: info.messageId,
       });
@@ -37,44 +58,82 @@ export const sendEmail = async ({ to, subject, html }) => {
 
     return info;
   } catch (error) {
-    console.error("❌ Email Error:", error.message);
+    console.error("❌ Email send failed:", {
+      message: error.message,
+      to,
+      subject,
+    });
 
-    const err = new Error("Failed to send email");
-    err.status = 500;
+    const err = new Error("Email service unavailable");
+    err.status = 503; // better than generic 500
     throw err;
   }
 };
 
 /**
- * ✉️ VERIFY EMAIL TEMPLATE
+ * ✉️ VERIFY EMAIL TEMPLATE (IMPROVED UI + ANTI-SPAM)
  */
 export const generateVerifyEmailTemplate = (otp, email) => {
   return `
-    <div style="font-family: Arial; max-width: 600px; margin: auto;">
-      <h2>Email Verification</h2>
+    <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; padding:20px;">
+      <h2 style="color:#333;">Verify Your Email</h2>
+
       <p>Hello,</p>
-      <p>Your OTP is:</p>
-      <h1 style="letter-spacing: 4px;">${otp}</h1>
+      <p>Use the OTP below to verify your account:</p>
+
+      <div style="
+        font-size:28px;
+        font-weight:bold;
+        letter-spacing:6px;
+        background:#f4f4f4;
+        padding:12px;
+        display:inline-block;
+        margin:10px 0;
+      ">
+        ${otp}
+      </div>
+
       <p>This OTP is valid for <b>24 hours</b>.</p>
-      <hr />
-      <small>If you did not request this, please ignore.</small>
+
+      <hr style="margin:20px 0;" />
+
+      <p style="font-size:12px; color:#777;">
+        If you didn’t request this, you can safely ignore this email.
+      </p>
     </div>
   `;
 };
 
 /**
- * 🔐 RESET PASSWORD TEMPLATE
+ * 🔐 RESET PASSWORD TEMPLATE (IMPROVED)
  */
 export const generateResetPasswordTemplate = (otp, email) => {
   return `
-    <div style="font-family: Arial; max-width: 600px; margin: auto;">
-      <h2>Password Reset</h2>
+    <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto; padding:20px;">
+      <h2 style="color:#333;">Reset Your Password</h2>
+
       <p>Hello,</p>
-      <p>Your OTP is:</p>
-      <h1 style="letter-spacing: 4px;">${otp}</h1>
+      <p>Use the OTP below to reset your password:</p>
+
+      <div style="
+        font-size:28px;
+        font-weight:bold;
+        letter-spacing:6px;
+        background:#f4f4f4;
+        padding:12px;
+        display:inline-block;
+        margin:10px 0;
+      ">
+        ${otp}
+      </div>
+
       <p>This OTP is valid for <b>15 minutes</b>.</p>
-      <hr />
-      <small>If you did not request this, secure your account.</small>
+
+      <hr style="margin:20px 0;" />
+
+      <p style="font-size:12px; color:#777;">
+        If you didn’t request a password reset, please secure your account immediately.
+      </p>
     </div>
   `;
 };
