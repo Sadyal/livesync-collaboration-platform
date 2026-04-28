@@ -1,31 +1,48 @@
 import express from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 
 import authRoutes from "./modules/auth/auth.routes.js";
-import userRoutes from "./modules/user/user.routes.js";
-import docRoutes from "./modules/document/doc.routes.js";
-
 import errorMiddleware from "./middleware/error.middleware.js";
 
 const app = express();
 
 /**
- * CORE MIDDLEWARES
+ * 🌍 ENV
  */
-app.use(express.json());
+const isProd = process.env.NODE_ENV === "production";
+
+/**
+ * 🔐 SECURITY HEADERS
+ */
+app.use(helmet());
+
+/**
+ * 📦 BODY PARSING (LIMIT SIZE)
+ */
+app.use(express.json({ limit: "10kb" }));
+
+/**
+ * 🍪 COOKIE PARSER
+ */
 app.use(cookieParser());
 
 /**
- * CORS (production-safe + localhost)
+ * 🌐 CORS CONFIG (STRICT + SAFE)
  */
+const allowedOrigins = [
+  "http://localhost:5173",
+];
+
 app.use(
   cors({
     origin: (origin, callback) => {
+      // allow server-to-server or Postman (no origin)
       if (!origin) return callback(null, true);
 
       if (
-        origin === "http://localhost:5173" ||
+        allowedOrigins.includes(origin) ||
         origin.endsWith(".vercel.app")
       ) {
         return callback(null, true);
@@ -38,21 +55,43 @@ app.use(
 );
 
 /**
- * HEALTH CHECK
+ * 🧪 REQUEST LOGGER (DEV ONLY)
+ */
+if (!isProd) {
+  app.use((req, res, next) => {
+    console.log(`📡 ${req.method} ${req.originalUrl}`);
+    next();
+  });
+}
+
+/**
+ * ❤️ HEALTH CHECK
  */
 app.get("/", (req, res) => {
-  res.status(200).json({ success: true, message: "API running" });
+  res.status(200).json({
+    success: true,
+    message: "API running",
+    environment: process.env.NODE_ENV || "development",
+  });
 });
 
 /**
- * ROUTES
+ * 🚀 ROUTES
  */
 app.use("/api/auth", authRoutes);
-app.use("/api/user", userRoutes);
-app.use("/api/docs", docRoutes);
 
 /**
- * ERROR HANDLER (LAST)
+ * ❌ 404 HANDLER (IMPORTANT)
+ */
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
+  });
+});
+
+/**
+ * ⚠️ GLOBAL ERROR HANDLER
  */
 app.use(errorMiddleware);
 

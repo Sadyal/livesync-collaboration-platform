@@ -2,18 +2,33 @@ import {
   registerUser,
   loginUser,
   getCurrentUser,
+  refreshAccessTokenService,
+  sendVerifyOtpService,
+  verifyEmailService,
+  sendResetOtpService,
+  resetPasswordService,
 } from "./auth.service.js";
 
+import userModel from "../../models/user.model.js";
 import { successResponse } from "../../utils/response.js";
 
 /**
- * COOKIE CONFIG (FIXED FOR LOCAL + PROD)
+ * 🔐 COOKIE CONFIG
  */
-const cookieOptions = {
+const isProd = process.env.NODE_ENV === "production";
+
+const accessTokenOptions = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === "production",
-  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+  maxAge: 15 * 60 * 1000, // 15 min
+};
+
+const refreshTokenOptions = {
+  httpOnly: true,
+  secure: isProd,
+  sameSite: isProd ? "none" : "lax",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
 /**
@@ -21,9 +36,10 @@ const cookieOptions = {
  */
 export const register = async (req, res, next) => {
   try {
-    const { user, token } = await registerUser(req.body);
+    const { user, accessToken, refreshToken } = await registerUser(req.body);
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie("accessToken", accessToken, accessTokenOptions);
+    res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
     return successResponse(res, { user }, "Registration successful", 201);
   } catch (err) {
@@ -36,9 +52,10 @@ export const register = async (req, res, next) => {
  */
 export const login = async (req, res, next) => {
   try {
-    const { user, token } = await loginUser(req.body);
+    const { user, accessToken, refreshToken } = await loginUser(req.body);
 
-    res.cookie("token", token, cookieOptions);
+    res.cookie("accessToken", accessToken, accessTokenOptions);
+    res.cookie("refreshToken", refreshToken, refreshTokenOptions);
 
     return successResponse(res, { user }, "Login successful");
   } catch (err) {
@@ -49,10 +66,22 @@ export const login = async (req, res, next) => {
 /**
  * LOGOUT
  */
-export const logout = async (req, res) => {
-  res.clearCookie("token", cookieOptions);
+export const logout = async (req, res, next) => {
+  try {
+    // 🔐 Invalidate session in DB (important)
+    if (req.userId) {
+      await userModel.findByIdAndUpdate(req.userId, {
+        refreshToken: "",
+      });
+    }
 
-  return successResponse(res, {}, "Logout successful");
+    res.clearCookie("accessToken", accessTokenOptions);
+    res.clearCookie("refreshToken", refreshTokenOptions);
+
+    return successResponse(res, {}, "Logout successful");
+  } catch (err) {
+    next(err);
+  }
 };
 
 /**
@@ -61,8 +90,78 @@ export const logout = async (req, res) => {
 export const me = async (req, res, next) => {
   try {
     const user = await getCurrentUser(req.userId);
-
     return successResponse(res, { user });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 🔄 REFRESH TOKEN
+ */
+export const refreshToken = async (req, res, next) => {
+  try {
+    const token = req.cookies?.refreshToken;
+
+    if (!token) {
+      const error = new Error("Unauthorized");
+      error.status = 401;
+      throw error;
+    }
+
+    const { accessToken } = await refreshAccessTokenService(token);
+
+    res.cookie("accessToken", accessToken, accessTokenOptions);
+
+    return successResponse(res, {}, "Token refreshed");
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 📧 SEND VERIFY OTP
+ */
+export const sendVerifyOtp = async (req, res, next) => {
+  try {
+    const result = await sendVerifyOtpService(req.userId);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * ✅ VERIFY EMAIL
+ */
+export const verifyEmail = async (req, res, next) => {
+  try {
+    const result = await verifyEmailService(req.body);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 📧 SEND RESET OTP
+ */
+export const sendResetOtp = async (req, res, next) => {
+  try {
+    const result = await sendResetOtpService(req.body.email);
+    return successResponse(res, result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * 🔐 RESET PASSWORD
+ */
+export const resetPassword = async (req, res, next) => {
+  try {
+    const result = await resetPasswordService(req.body);
+    return successResponse(res, result);
   } catch (err) {
     next(err);
   }
