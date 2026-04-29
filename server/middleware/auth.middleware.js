@@ -1,64 +1,62 @@
 import { verifyToken } from "../utils/token.js";
 
 /**
- * 🔐 AUTH MIDDLEWARE (Production-Grade)
+ * 🔐 AUTH MIDDLEWARE
  * Supports:
- * - Cookie-based auth (browser)
- * - Bearer token (API / Postman / mobile)
+ * - Cookies (browser)
+ * - Bearer token (Postman / mobile)
  */
 const authMiddleware = (req, res, next) => {
   try {
-    let token = null;
+    let token;
 
     /**
-     * 🔹 1. Extract token from cookies
+     * 🔹 1. Cookie
      */
     if (req.cookies?.accessToken) {
       token = req.cookies.accessToken;
     }
 
     /**
-     * 🔹 2. Extract token from Authorization header
-     * Format: Bearer <token>
+     * 🔹 2. Authorization header
      */
-    else if (req.headers.authorization) {
-      const parts = req.headers.authorization.split(" ");
-
-      if (parts.length === 2 && parts[0] === "Bearer") {
-        token = parts[1];
-      }
+    else if (req.headers.authorization?.startsWith("Bearer ")) {
+      token = req.headers.authorization.split(" ")[1];
     }
 
     /**
-     * 🔹 3. No token found
+     * 🔹 3. Missing token
      */
     if (!token) {
-      const error = new Error("Unauthorized: Token missing");
-      error.status = 401;
-      throw error;
+      return next({
+        status: 401,
+        message: "Unauthorized: Token missing",
+      });
     }
 
     /**
      * 🔹 4. Verify token
      */
-    let decoded;
-    try {
-      decoded = verifyToken(token);
-    } catch (jwtError) {
-      const error = new Error("Unauthorized: Invalid or expired token");
-      error.status = 401;
-      throw error;
+    const decoded = verifyToken(token);
+
+    if (!decoded?.id) {
+      return next({
+        status: 401,
+        message: "Unauthorized: Invalid token payload",
+      });
     }
 
     /**
-     * 🔹 5. Attach user to request
+     * 🔹 5. Attach user
      */
     req.userId = decoded.id;
 
     next();
   } catch (err) {
-    err.status = err.status || 401;
-    next(err);
+    return next({
+      status: 401,
+      message: "Unauthorized: Invalid or expired token",
+    });
   }
 };
 

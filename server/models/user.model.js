@@ -18,17 +18,18 @@ const userSchema = new mongoose.Schema(
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true, // creates unique index
+      unique: true,
       lowercase: true,
       trim: true,
       match: [/^\S+@\S+\.\S+$/, "Please use a valid email address"],
+      index: true, // ✅ Explicit index for performance
     },
 
     password: {
       type: String,
       required: [true, "Password is required"],
       minlength: [6, "Password must be at least 6 characters"],
-      select: false, // 🔐 never returned by default
+      select: false,
     },
 
     // 🔹 AUTHORIZATION
@@ -47,7 +48,7 @@ const userSchema = new mongoose.Schema(
     verifyOtp: {
       type: String,
       default: "",
-      select: false, // ⚠️ must be manually selected in queries
+      select: false,
     },
 
     verifyOtpExpireAt: {
@@ -89,8 +90,7 @@ const userSchema = new mongoose.Schema(
 );
 
 /**
- * 🔐 SANITIZE OUTPUT
- * Removes sensitive fields automatically
+ * 🔐 SANITIZE OUTPUT (CRITICAL SECURITY LAYER)
  */
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
@@ -106,10 +106,30 @@ userSchema.methods.toJSON = function () {
 };
 
 /**
- * ⚡ PERFORMANCE INDEX
- * Explicit index improves clarity and avoids duplication warnings
+ * ⚡ SAFE TRANSFORM FOR LEAN QUERIES (OPTIONAL BUT PRO)
  */
-// userSchema.index({ email: 1 });
+userSchema.set("toObject", {
+  transform: function (_, ret) {
+    delete ret.password;
+    delete ret.verifyOtp;
+    delete ret.verifyOtpExpireAt;
+    delete ret.resetOtp;
+    delete ret.resetOtpExpireAt;
+    delete ret.refreshToken;
+    return ret;
+  },
+});
+
+/**
+ * ⚠️ PREVENT DUPLICATE EMAIL RACE CONDITION (EDGE CASE)
+ */
+userSchema.post("save", function (error, doc, next) {
+  if (error.code === 11000) {
+    next(new Error("Email already exists"));
+  } else {
+    next(error);
+  }
+});
 
 const User = mongoose.model("User", userSchema);
 

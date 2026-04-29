@@ -22,5 +22,17 @@ export const generateRefreshToken = (userId) => {
  * Verify Token
  */
 export const verifyToken = (token) => {
-  return jwt.verify(token, process.env.JWT_SECRET);
+  if (!token) {
+    const err = new Error("Token missing");
+    err.status = 401;
+    throw err;
+  }
+
+  try {
+    return jwt.verify(token, process.env.JWT_SECRET);
+  } catch (error) {
+    const err = new Error("Invalid or expired token");
+    err.status = 401;
+    throw err;
+  }
 };

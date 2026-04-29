@@ -275,8 +275,8 @@ export const sendResetOtpService = async (email) => {
 
   const otp = generateOtp();
 
-  user.resetOtp = otp;
-  user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000; // 15 min
+  user.resetOtp = String(otp); // ✅ enforce string
+  user.resetOtpExpireAt = Date.now() + 15 * 60 * 1000;
 
   await user.save();
 
@@ -292,7 +292,6 @@ export const sendResetOtpService = async (email) => {
 
   return { message: "Reset OTP sent successfully" };
 };
-
 /**
  * 🔐 RESET PASSWORD
  */
@@ -311,28 +310,44 @@ export const resetPasswordService = async ({
 
   const normalizedEmail = normalizeEmail(email);
 
+  // ✅ FIX: include OTP fields
   const user = await userModel
     .findOne({ email: normalizedEmail })
-    .select("+password");
+    .select("+password +resetOtp +resetOtpExpireAt");
 
   if (!user) {
     throw createError("User not found", 404);
   }
 
-const isOtpValid =
-  String(user.resetOtp).trim() === String(otp).trim();
+  // ✅ defensive check (important in production)
+  if (!user.resetOtp || !user.resetOtpExpireAt) {
+    throw createError("No reset request found", 400);
+  }
 
-const isExpired = Date.now() > user.resetOtpExpireAt;
+  const isOtpValid =
+    String(user.resetOtp).trim() === String(otp).trim();
 
-if (!isOtpValid || isExpired) {
-  throw createError("Invalid or expired OTP", 400);
-}{
+  const isExpired = Date.now() > user.resetOtpExpireAt;
+
+  // ✅ optional debug (remove in production)
+  console.log({
+    enteredOtp: otp,
+    storedOtp: user.resetOtp,
+    expireAt: user.resetOtpExpireAt,
+    now: Date.now(),
+    isOtpValid,
+    isExpired,
+  });
+
+  if (!isOtpValid || isExpired) {
     throw createError("Invalid or expired OTP", 400);
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
 
   user.password = hashedPassword;
+
+  // ✅ clear OTP (security)
   user.resetOtp = "";
   user.resetOtpExpireAt = 0;
 

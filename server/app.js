@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import helmet from "helmet";
 
 import authRoutes from "./modules/auth/auth.routes.js";
+import docRoutes from "./modules/document/doc.routes.js";
 import errorMiddleware from "./middleware/error.middleware.js";
 
 const app = express();
@@ -19,26 +20,13 @@ const isProd = process.env.NODE_ENV === "production";
 app.use(helmet());
 
 /**
- * 📦 BODY PARSING (LIMIT SIZE)
+ * 🌐 CORS CONFIG (MOVE BEFORE ROUTES)
  */
-app.use(express.json({ limit: "10kb" }));
-
-/**
- * 🍪 COOKIE PARSER
- */
-app.use(cookieParser());
-
-/**
- * 🌐 CORS CONFIG (STRICT + SAFE)
- */
-const allowedOrigins = [
-  "http://localhost:5173",
-];
+const allowedOrigins = ["http://localhost:5173"];
 
 app.use(
   cors({
     origin: (origin, callback) => {
-      // allow server-to-server or Postman (no origin)
       if (!origin) return callback(null, true);
 
       if (
@@ -53,6 +41,16 @@ app.use(
     credentials: true,
   })
 );
+
+/**
+ * 📦 BODY PARSING
+ */
+app.use(express.json({ limit: "10kb" }));
+
+/**
+ * 🍪 COOKIE PARSER
+ */
+app.use(cookieParser());
 
 /**
  * 🧪 REQUEST LOGGER (DEV ONLY)
@@ -79,11 +77,13 @@ app.get("/", (req, res) => {
  * 🚀 ROUTES
  */
 app.use("/api/auth", authRoutes);
+app.use("/api/docs", docRoutes);
 
 /**
- * ❌ 404 HANDLER (IMPORTANT)
+ * ❌ 404 HANDLER
+ * ⚠️ MUST come AFTER routes
  */
-app.use((req, res) => {
+app.use((req, res, next) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -92,6 +92,7 @@ app.use((req, res) => {
 
 /**
  * ⚠️ GLOBAL ERROR HANDLER
+ * ⚠️ MUST be LAST middleware
  */
 app.use(errorMiddleware);
 
