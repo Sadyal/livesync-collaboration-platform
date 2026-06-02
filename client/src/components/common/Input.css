@@ -1,0 +1,115 @@
+/* =========================================
+   INPUT WRAPPER
+========================================= */
+.input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+/* =========================================
+   LABEL
+========================================= */
+.input-label {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+/* Required asterisk */
+.input-required {
+  color: var(--error);
+  font-size: 0.75rem;
+}
+
+/* =========================================
+   INPUT FIELD
+========================================= */
+.input-field {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+
+  transition: 
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+
+  outline: none;
+}
+
+/* Hover (subtle UX improvement) */
+.input-field:hover {
+  border-color: var(--border-highlight);
+}
+
+/* Focus (accessible + clean) */
+.input-field:focus-visible {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-light);
+}
+
+/* Placeholder */
+.input-field::placeholder {
+  color: var(--text-muted);
+}
+
+/* =========================================
+   DISABLED STATE
+========================================= */
+.input-field:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--bg-secondary);
+}
+
+/* =========================================
+   ERROR STATE
+========================================= */
+.input-error {
+  border-color: var(--error);
+}
+
+.input-error:focus-visible {
+  border-color: var(--error);
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15);
+}
+
+/* Error message */
+.input-error-text {
+  font-size: 0.75rem;
+  color: var(--error);
+  margin-top: 0.1rem;
+}
+
+/* =========================================
+   AUTOFILL FIX (Chrome)
+========================================= */
+input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0px 1000px var(--bg-tertiary) inset;
+  -webkit-text-fill-color: var(--text-primary);
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* =========================================
+   SMOOTH INVALID ANIMATION (optional UX)
+========================================= */
+.input-error {
+  animation: inputShake 0.2s ease-in-out;
+}
+
+@keyframes inputShake {
+  0% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  50% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  100% { transform: translateX(0); }
+}

@@ -1,0 +1,169 @@
+/* =========================================
+   CONTAINER
+========================================= */
+.auth-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+/* =========================================
+   CARD
+========================================= */
+.auth-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 2rem;
+  background: var(--glass-panel-bg, rgba(255,255,255,0.05));
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-color, #2a2a2a);
+  border-radius: var(--radius-lg, 12px);
+  box-shadow: var(--shadow-lg, 0 10px 30px rgba(0,0,0,0.2)),
+              0 0 40px rgba(99, 102, 241, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: fadeIn 0.35s ease;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+.auth-header {
+  text-align: center;
+}
+
+.auth-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0.4rem;
+  background: linear-gradient(135deg, var(--accent-primary), var(--success));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.auth-header p {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   FORM
+========================================= */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* =========================================
+   INPUT
+========================================= */
+.auth-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  background: var(--bg-tertiary, #111);
+  border: 1px solid var(--border-color, #333);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-primary, #fff);
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+  outline: none;
+}
+
+/* Focus */
+.auth-input:focus {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+  background: var(--bg-secondary, #1a1a1a);
+}
+
+/* Disabled */
+.auth-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Autofill fix (Chrome) */
+.auth-input:-webkit-autofill {
+  -webkit-box-shadow: 0 0 0 1000px var(--bg-tertiary) inset !important;
+  -webkit-text-fill-color: var(--text-primary);
+}
+
+/* =========================================
+   ERROR
+========================================= */
+.auth-error {
+  padding: 0.7rem 0.9rem;
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error, #ef4444);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: var(--radius-md, 8px);
+  font-size: 0.85rem;
+  line-height: 1.4;
+  animation: slideIn 0.25s ease;
+}
+
+/* =========================================
+   FOOTER
+========================================= */
+.auth-footer {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 0.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.auth-footer a {
+  color: var(--accent-primary);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.auth-footer a:hover {
+  color: var(--accent-hover);
+  text-decoration: underline;
+}
+
+/* =========================================
+   ANIMATIONS
+========================================= */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 1.5rem;
+  }
+
+  .auth-header h1 {
+    font-size: 1.5rem;
+  }
+}

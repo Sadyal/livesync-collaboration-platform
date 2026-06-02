@@ -1,0 +1,218 @@
+/* =========================================
+   COUNTER
+========================================= */
+.counter {
+  font-size: 0.95rem;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--accent-primary, #6366f1);
+  background: var(--accent-light, rgba(99, 102, 241, 0.15));
+  border: 2px solid transparent;
+  transition: border-color 0.2s ease;
+  margin-bottom: 1.5rem;
+}
+
+.counter:hover {
+  border-color: var(--border-highlight);
+}
+
+.counter:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* =========================================
+   HERO
+========================================= */
+.hero {
+  position: relative;
+}
+
+.hero .base,
+.hero .framework,
+.hero .vite {
+  inset-inline: 0;
+  margin: 0 auto;
+}
+
+.hero .base {
+  width: 170px;
+  position: relative;
+  z-index: 0;
+}
+
+.hero .framework,
+.hero .vite {
+  position: absolute;
+}
+
+.hero .framework {
+  z-index: 1;
+  top: 34px;
+  height: 28px;
+  transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4);
+}
+
+.hero .vite {
+  z-index: 0;
+  top: 107px;
+  height: 26px;
+  transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8);
+}
+
+/* =========================================
+   CENTER
+========================================= */
+#center {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-grow: 1;
+}
+
+/* =========================================
+   NEXT STEPS
+========================================= */
+#next-steps {
+  display: flex;
+  border-top: 1px solid var(--border-color);
+  text-align: left;
+}
+
+#next-steps > div {
+  flex: 1;
+  padding: 2rem;
+}
+
+#next-steps .icon {
+  margin-bottom: 1rem;
+  width: 22px;
+  height: 22px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  #center {
+    padding: 2rem 1.25rem;
+    gap: 1rem;
+  }
+
+  #next-steps {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  #next-steps > div {
+    padding: 1.5rem 1.25rem;
+  }
+}
+
+/* =========================================
+   DOCS SECTION
+========================================= */
+#docs {
+  border-right: 1px solid var(--border-color);
+}
+
+@media (max-width: 1024px) {
+  #docs {
+    border-right: none;
+    border-bottom: 1px solid var(--border-color);
+  }
+}
+
+/* =========================================
+   SOCIAL LINKS
+========================================= */
+#next-steps ul {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  gap: 8px;
+  margin-top: 2rem;
+}
+
+#next-steps ul .logo {
+  height: 18px;
+}
+
+#next-steps ul a {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  display: flex;
+  padding: 6px 12px;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  transition: box-shadow 0.2s ease;
+}
+
+#next-steps ul a:hover {
+  box-shadow: var(--shadow-sm);
+}
+
+#next-steps ul .button-icon {
+  height: 18px;
+  width: 18px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  #next-steps ul {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  #next-steps ul li {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  #next-steps ul a {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* =========================================
+   SPACER
+========================================= */
+#spacer {
+  height: 80px;
+  border-top: 1px solid var(--border-color);
+}
+
+@media (max-width: 1024px) {
+  #spacer {
+    height: 48px;
+  }
+}
+
+/* =========================================
+   TICKS
+========================================= */
+.ticks {
+  position: relative;
+  width: 100%;
+}
+
+.ticks::before,
+.ticks::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  border: 5px solid transparent;
+}
+
+.ticks::before {
+  left: 0;
+  border-left-color: var(--border-color);
+}
+
+.ticks::after {
+  right: 0;
+  border-right-color: var(--border-color);
+}

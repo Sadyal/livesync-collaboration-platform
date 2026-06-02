@@ -1,0 +1,77 @@
+/* =========================================
+   Overlay (Full Screen Loader)
+========================================= */
+.loader-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Optional glass effect (safe fallback) */
+.glass {
+  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+/* =========================================
+   Inline Loader
+========================================= */
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1.5rem;
+}
+
+/* =========================================
+   Spinner Base
+========================================= */
+.spinner {
+  border-radius: 50%;
+  border-style: solid;
+  border-color: var(--border-color, #ddd);
+  border-top-color: var(--accent-primary, #4f46e5);
+  animation: spin 0.8s linear infinite;
+}
+
+/* Sizes */
+.spinner-sm {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-width: 2px;
+}
+
+.spinner-md {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-width: 3px;
+}
+
+.spinner-lg {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-width: 4px;
+}
+
+/* =========================================
+   Label Text
+========================================= */
+.loader-text {
+  font-size: 0.9rem;
+  color: var(--text-secondary, #666);
+}
+
+/* =========================================
+   Animation
+========================================= */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
