@@ -142,6 +142,7 @@ const Editor = () => {
     });
 
     socketRef.current = newSocket;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSocket(newSocket);
 
     // Join document room
@@ -162,7 +163,7 @@ const Editor = () => {
         editor.commands.setContent(content, false);
         try {
           editor.commands.setTextSelection({ from, to });
-        } catch (err) {
+        } catch {
           // ignore selection errors if document changed size
         }
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Mic, MicOff, Video, VideoOff, PhoneOff, Users } from "lucide-react";
 import "./VideoCall.css";
 
@@ -9,11 +9,10 @@ const ICE_SERVERS = {
   ],
 };
 
-const VideoCall = ({ socket, docId, onClose }) => {
+const VideoCall = ({ socket, onClose }) => {
   // ==========================================
   // STATE MANAGEMENT
   // ==========================================
-  const [localStream, setLocalStream] = useState(null);
   const [remoteStreams, setRemoteStreams] = useState({}); // { socketId: { stream, userId } }
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -49,7 +48,6 @@ const VideoCall = ({ socket, docId, onClose }) => {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
     }
-    setLocalStream(null);
 
     // Close all peer connections
     Object.keys(pcsRef.current).forEach((socketId) => {
@@ -139,7 +137,6 @@ const VideoCall = ({ socket, docId, onClose }) => {
         });
 
         localStreamRef.current = stream;
-        setLocalStream(stream);
 
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
@@ -161,8 +158,8 @@ const VideoCall = ({ socket, docId, onClose }) => {
               offer,
               targetSocketId: socketId,
             });
-          } catch (err) {
-            console.error("❌ Failed to create offer:", err.message);
+          } catch {
+            console.error("❌ Failed to create offer");
           }
         });
 
@@ -180,8 +177,8 @@ const VideoCall = ({ socket, docId, onClose }) => {
               answer,
               targetSocketId: senderSocketId,
             });
-          } catch (err) {
-            console.error("❌ Failed to process offer/create answer:", err.message);
+          } catch {
+            console.error("❌ Failed to process offer/create answer");
           }
         });
 
@@ -192,8 +189,8 @@ const VideoCall = ({ socket, docId, onClose }) => {
           if (pc) {
             try {
               await pc.setRemoteDescription(new RTCSessionDescription(answer));
-            } catch (err) {
-              console.error("❌ Failed to set remote description:", err.message);
+            } catch {
+              console.error("❌ Failed to set remote description");
             }
           }
         });
@@ -204,8 +201,8 @@ const VideoCall = ({ socket, docId, onClose }) => {
           if (pc) {
             try {
               await pc.addIceCandidate(new RTCIceCandidate(candidate));
-            } catch (err) {
-              console.error("❌ Failed to add ICE candidate:", err.message);
+            } catch {
+              console.error("❌ Failed to add ICE candidate");
             }
           }
         });
@@ -302,7 +299,7 @@ const VideoCall = ({ socket, docId, onClose }) => {
                     playsInline
                     className="video-element"
                   />
-                  <div className="video-label">Collaborator</div>
+                  <div className="video-label">{userId || "Collaborator"}</div>
                 </div>
               );
             })}

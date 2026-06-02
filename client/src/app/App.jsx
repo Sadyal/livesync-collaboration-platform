@@ -1,7 +1,7 @@
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "../context/AuthProvider";
-import { ThemeProvider } from "../context/ThemeContext";
+import { ThemeProvider } from "../context/ThemeProvider";
 import AppRoutes from "./routes";
 
 // Optional: error boundary (recommended)

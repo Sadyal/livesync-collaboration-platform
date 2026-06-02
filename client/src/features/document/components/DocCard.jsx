@@ -1,6 +1,5 @@
-import React from "react";
 import { Link } from "react-router-dom";
-import { FileText, Trash2, Clock, Calendar } from "lucide-react";
+import { FileText, Trash2, Clock } from "lucide-react";
 import { useDocuments } from "../hooks";
 
 /**
@@ -17,7 +16,7 @@ const DocCard = ({ doc }) => {
     if (window.confirm(`Are you sure you want to delete "${doc.title || "Untitled Document"}"?`)) {
       try {
         await deleteDoc(doc._id);
-      } catch (err) {
+      } catch {
         alert("Failed to delete document");
       }
     }

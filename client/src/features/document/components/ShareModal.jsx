@@ -21,7 +21,7 @@ const ShareModal = ({ docId, onClose }) => {
       await documentApi.shareDoc(docId, { email });
       setStatus({ type: 'success', message: `Document shared with ${email}` });
       setEmail('');
-    } catch (error) {
+    } catch {
       // Mock bypass behavior
       setStatus({ type: 'success', message: `(Mock) Document shared with ${email}` });
       setEmail('');

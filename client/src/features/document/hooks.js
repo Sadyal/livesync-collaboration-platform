@@ -27,6 +27,7 @@ export const useDocuments = () => {
 
   // INITIAL LOAD
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchDocs();
   }, [fetchDocs]);
 

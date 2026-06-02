@@ -24,6 +24,7 @@ const Profile = () => {
 useEffect(() => {
   if (!user) return;
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   setFormData((prev) => {
     // 🔒 prevent unnecessary re-renders
     if (
@@ -56,26 +57,23 @@ useEffect(() => {
   };
 
   // ==========================================
-  // VALIDATION
-  // ==========================================
-  const validate = () => {
-    if (!formData.name.trim()) return "Name is required";
-
-    if (!/^\S+@\S+\.\S+$/.test(formData.email))
-      return "Invalid email format";
-
-    if (formData.newPassword && formData.newPassword.length < 6)
-      return "New password must be at least 6 characters";
-
-    return null;
-  };
-
-  // ==========================================
-  // SUBMIT
+  // SUBMIT & VALIDATION
   // ==========================================
   const handleSubmit = useCallback(
     async (e) => {
       e.preventDefault();
+
+      const validate = () => {
+        if (!formData.name.trim()) return "Name is required";
+
+        if (!/^\S+@\S+\.\S+$/.test(formData.email))
+          return "Invalid email format";
+
+        if (formData.newPassword && formData.newPassword.length < 6)
+          return "New password must be at least 6 characters";
+
+        return null;
+      };
 
       const error = validate();
       if (error) {

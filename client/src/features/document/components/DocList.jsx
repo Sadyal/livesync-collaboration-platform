@@ -1,6 +1,5 @@
-import React from "react";
 import DocCard from "./DocCard";
-import { FileEdit, Info } from "lucide-react";
+import { FileEdit } from "lucide-react";
 
 /**
  * 📄 DocList Component

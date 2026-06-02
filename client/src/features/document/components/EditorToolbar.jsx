@@ -3,7 +3,7 @@ import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
   List, ListOrdered, Highlighter,
   Link as LinkIcon, CheckSquare, Table as TableIcon,
-  Image as ImageIcon, Subscript, Superscript, Type
+  Image as ImageIcon, Subscript, Superscript
 } from "lucide-react";
 
 import "./EditorToolbar.css";
