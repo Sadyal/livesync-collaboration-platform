@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Share2, Save, ChevronLeft } from "lucide-react";
+import { Share2, Save, ChevronLeft, Video, VideoOff } from "lucide-react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
+import { io } from "socket.io-client";
 
 import { documentApi } from "../api";
 import { ROUTES } from "../../../utils/constants";
@@ -11,6 +12,7 @@ import Button from "../../../components/common/Button";
 import Loader from "../../../components/common/Loader";
 import ShareModal from "../components/ShareModal";
 import EditorToolbar from "../components/EditorToolbar";
+import VideoCall from "../components/VideoCall";
 
 import "./EditorUI.css";
 
@@ -29,16 +31,22 @@ const Editor = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
+  // ==============================
+  // STATE MANAGEMENT
+  // ==============================
   const [doc, setDoc] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isVideoCallActive, setIsVideoCallActive] = useState(false);
+  const [socket, setSocket] = useState(null);
 
+  const socketRef = useRef(null);
   const debouncedSaveRef = useRef(null);
 
   // ==============================
-  // FETCH DOCUMENT
+  // FETCH DOCUMENT TITLE & METRICS
   // ==============================
   const fetchDoc = useCallback(async () => {
     try {
@@ -56,18 +64,16 @@ const Editor = () => {
   }, [id, navigate]);
 
   // ==============================
-  // SAVE CONTENT (SEPARATE LOGIC)
+  // SAVE CONTENT OVER SOCKETS (ALIGNED WITH SERVER)
   // ==============================
-  const saveContent = useCallback(async (content) => {
-    try {
-      await documentApi.updateContent(id, content); // ✅ separate endpoint recommended
-    } catch (err) {
-      console.error("Content save failed:", err.message);
+  const saveContent = useCallback((content) => {
+    if (socketRef.current) {
+      socketRef.current.emit("save-document", content);
     }
-  }, [id]);
+  }, []);
 
   // ==============================
-  // SAVE TITLE ONLY
+  // SAVE TITLE ONLY (HTTP API)
   // ==============================
   const saveTitle = useCallback(async (title) => {
     try {
@@ -109,35 +115,82 @@ const Editor = () => {
 
       setDoc((prev) => {
         if (!prev) return prev;
-
-        const updated = { ...prev, content };
-
-        // ✅ debounce content save
-        debouncedSaveRef.current?.(content);
-
-        return updated;
+        return { ...prev, content };
       });
+
+      // 📡 Emit text change to other collaborators in real-time
+      if (socketRef.current) {
+        socketRef.current.emit("send-changes", content);
+      }
+
+      // 💾 Save to DB (debounced)
+      debouncedSaveRef.current?.(content);
     },
   });
 
   // ==============================
-  // LOAD DOCUMENT
+  // SOCKETS SYNC (REAL-TIME EDITING)
+  // ==============================
+  useEffect(() => {
+    const token = localStorage.getItem("accessToken");
+    const socketUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:4000";
+
+    console.log("🔌 Initializing socket connection to:", socketUrl);
+    const newSocket = io(socketUrl, {
+      auth: { token },
+      transports: ["websocket"], // secure transport
+    });
+
+    socketRef.current = newSocket;
+    setSocket(newSocket);
+
+    // Join document room
+    newSocket.emit("get-document", id);
+
+    // RECEIVE INITIAL CONTENT
+    newSocket.on("load-document", (content) => {
+      if (editor && content) {
+        editor.commands.setContent(content);
+      }
+      setIsLoading(false);
+    });
+
+    // RECEIVE COLLABORATOR EDITS
+    newSocket.on("receive-changes", (content) => {
+      if (editor && content !== editor.getHTML()) {
+        const { from, to } = editor.state.selection;
+        editor.commands.setContent(content, false);
+        try {
+          editor.commands.setTextSelection({ from, to });
+        } catch (err) {
+          // ignore selection errors if document changed size
+        }
+      }
+    });
+
+    // ACCESS DENIED
+    newSocket.on("access-denied", () => {
+      setError("You do not have access to this document.");
+      setIsLoading(false);
+    });
+
+    // CLEANUP ON UNMOUNT
+    return () => {
+      console.log("🔌 Disconnecting socket connection");
+      newSocket.disconnect();
+      socketRef.current = null;
+    };
+  }, [id, editor]);
+
+  // ==============================
+  // LOAD METADATA
   // ==============================
   useEffect(() => {
     const init = async () => {
-      const data = await fetchDoc();
-
-      if (data) {
-        setTimeout(() => {
-          editor?.commands.setContent(data.content || "");
-        }, 0);
-      }
-
-      setIsLoading(false);
+      await fetchDoc();
     };
-
-    if (editor) init();
-  }, [editor, fetchDoc]);
+    init();
+  }, [fetchDoc]);
 
   // ==============================
   // TITLE CHANGE
@@ -152,16 +205,15 @@ const Editor = () => {
   };
 
   // ==============================
-  // MANUAL SAVE
+  // MANUAL SAVE (FOR TITLE)
   // ==============================
   const handleSave = async () => {
     if (!doc) return;
-
     await saveTitle(doc.title);
   };
 
   // ==============================
-  // UI STATES
+  // UI RENDERING STATES
   // ==============================
   if (isLoading) return <Loader fullScreen />;
 
@@ -185,6 +237,7 @@ const Editor = () => {
           <button
             className="icon-btn"
             onClick={() => navigate(ROUTES.DASHBOARD)}
+            aria-label="Back to Dashboard"
           >
             <ChevronLeft size={20} />
           </button>
@@ -203,15 +256,30 @@ const Editor = () => {
             {isSaving ? "Saving..." : "Saved"}
           </span>
 
+          {/* 📹 WEBRTC VIDEO CALL TOGGLE */}
+          <Button
+            variant={isVideoCallActive ? "danger" : "secondary"}
+            onClick={() => setIsVideoCallActive((prev) => !prev)}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+          >
+            {isVideoCallActive ? <VideoOff size={16} /> : <Video size={16} />}
+            <span>{isVideoCallActive ? "Leave Call" : "Video Call"}</span>
+          </Button>
+
           <Button
             variant="secondary"
             onClick={() => setIsShareModalOpen(true)}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
           >
-            <Share2 size={16} /> Share
+            <Share2 size={16} /> <span>Share</span>
           </Button>
 
-          <Button onClick={handleSave} isLoading={isSaving}>
-            <Save size={16} /> Save
+          <Button 
+            onClick={handleSave} 
+            isLoading={isSaving}
+            style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}
+          >
+            <Save size={16} /> <span>Save</span>
           </Button>
         </div>
       </div>
@@ -222,11 +290,20 @@ const Editor = () => {
         <EditorContent editor={editor} />
       </div>
 
-      {/* SHARE */}
+      {/* SHARE MODAL */}
       {isShareModalOpen && (
         <ShareModal
           docId={id}
           onClose={() => setIsShareModalOpen(false)}
+        />
+      )}
+
+      {/* 📹 FLOATING WEBRTC VIDEO CONFERENCING CARD */}
+      {isVideoCallActive && socket && (
+        <VideoCall
+          socket={socket}
+          docId={id}
+          onClose={() => setIsVideoCallActive(false)}
         />
       )}
     </div>
